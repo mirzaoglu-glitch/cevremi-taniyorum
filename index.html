@@ -119,6 +119,17 @@
       min-height: 48px;
     }
 
+    #kutu {
+      margin-top: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #1d4ed8;
+      background: #eff6ff;
+      border-radius: 12px;
+      padding: 10px;
+      min-height: 24px;
+    }
+
     .footer-note {
       margin-top: 16px;
       font-size: 13px;
@@ -141,6 +152,7 @@
       <div id="sonuc">Sonuç burada görünecek</div>
       <div id="oran"></div>
       <div id="bilgi"></div>
+      <div id="kutu"></div>
     </div>
 
     <div class="footer-note">Çevreyi korumak küçük adımlarla başlar 🌿</div>
@@ -195,7 +207,8 @@
           mesaj: "♻️ Plastik tespit edildi",
           renk: "#16a34a",
           ses: "Plastik tespit edildi",
-          bilgi: "Plastik atıklar geri dönüştürülerek doğaya zarar vermesi engellenebilir."
+          bilgi: "Plastik atıklar geri dönüştürülerek doğaya zarar vermesi engellenebilir.",
+          kutu: "Sarı geri dönüşüm kutusuna atılmalıdır."
         };
       }
 
@@ -204,7 +217,8 @@
           mesaj: "🧊 Cam tespit edildi",
           renk: "#2563eb",
           ses: "Cam tespit edildi",
-          bilgi: "Cam yüzde yüz geri dönüştürülebilir ve tekrar kullanılabilir."
+          bilgi: "Cam yüzde yüz geri dönüştürülebilir ve tekrar kullanılabilir.",
+          kutu: "Yeşil atık kutusuna atılmalıdır."
         };
       }
 
@@ -213,7 +227,8 @@
           mesaj: "📄 Kağıt tespit edildi",
           renk: "#d97706",
           ses: "Kağıt tespit edildi",
-          bilgi: "Kağıt geri dönüşümü ağaçların kesilmesini azaltır."
+          bilgi: "Kağıt geri dönüşümü ağaçların kesilmesini azaltır.",
+          kutu: "Mavi geri dönüşüm kutusuna atılmalıdır."
         };
       }
 
@@ -222,7 +237,8 @@
           mesaj: "🔩 Metal tespit edildi",
           renk: "#7c3aed",
           ses: "Metal tespit edildi",
-          bilgi: "Metal atıklar tekrar kullanılarak enerji tasarrufu sağlanır."
+          bilgi: "Metal atıklar tekrar kullanılarak enerji tasarrufu sağlanır.",
+          kutu: "Gri atık kutusuna atılmalıdır."
         };
       }
 
@@ -230,7 +246,8 @@
         mesaj: "❓ Tanımlanamadı",
         renk: "#6b7280",
         ses: "Tanımlanamadı",
-        bilgi: "Lütfen nesneyi daha net gösteriniz."
+        bilgi: "Lütfen nesneyi daha net gösteriniz.",
+        kutu: "Uygun atık türü belirlenemedi."
       };
     }
 
@@ -266,13 +283,14 @@
 
       document.getElementById("oran").innerText = `Güven oranı: %${yuzde}`;
       document.getElementById("bilgi").innerText = bilgi.bilgi;
+      document.getElementById("kutu").innerText = `🗑 ${bilgi.kutu}`;
 
       const simdi = Date.now();
       if (
         yuzde >= 85 &&
         (enYuksek.className !== sonSeslendirilenSinif || simdi - sonSesZamani > 4000)
       ) {
-        konus(bilgi.ses);
+        konus(`${bilgi.ses}. ${bilgi.kutu}`);
         sonSeslendirilenSinif = enYuksek.className;
         sonSesZamani = simdi;
       }
