@@ -1,148 +1,266 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Akıllı Tanıma</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Akıllı Tanıma</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
-<style>
-body {
-    font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #d4fcf7, #96e6a1);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-/* Kart tasarım */
-.container {
-    background: white;
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    text-align: center;
-    width: 300px;
-}
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #d9f7e8, #b8e7d3, #eefaf4);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      color: #1f2937;
+    }
 
-/* Başlık */
-h2 {
-    color: #2c7a7b;
-}
+    .container {
+      width: 100%;
+      max-width: 420px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 24px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16);
+      padding: 28px 24px;
+      text-align: center;
+      backdrop-filter: blur(6px);
+    }
 
-/* Buton */
-button {
-    background: #38a169;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 10px;
-    font-size: 16px;
-    cursor: pointer;
-}
+    h2 {
+      margin: 0 0 10px;
+      color: #0f766e;
+      font-size: 34px;
+    }
 
-button:hover {
-    background: #2f855a;
-}
+    .subtitle {
+      margin: 0 0 20px;
+      color: #4b5563;
+      font-size: 15px;
+    }
 
-/* Sonuç yazısı */
-#sonuc {
-    margin-top: 15px;
-    font-size: 18px;
-    font-weight: bold;
-}
+    button {
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      padding: 14px 22px;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(34, 197, 94, 0.28);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      margin-bottom: 16px;
+    }
 
-#webcam-container {
-    margin-top: 15px;
-}
-</style>
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 22px rgba(34, 197, 94, 0.35);
+    }
+
+    #durum {
+      margin: 6px 0 14px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #2563eb;
+      min-height: 24px;
+    }
+
+    #webcam-container {
+      margin-top: 8px;
+      display: flex;
+      justify-content: center;
+    }
+
+    #webcam-container canvas {
+      border-radius: 20px;
+      border: 4px solid #86efac;
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+      max-width: 100%;
+      height: auto;
+    }
+
+    .result-box {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 16px;
+      background: #f8fafc;
+      box-shadow: inset 0 0 0 1px #e5e7eb;
+    }
+
+    #sonuc {
+      font-size: 24px;
+      font-weight: bold;
+      min-height: 34px;
+      margin-bottom: 8px;
+    }
+
+    #oran {
+      font-size: 17px;
+      color: #374151;
+      min-height: 24px;
+    }
+
+    .footer-note {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #6b7280;
+    }
+  </style>
 </head>
-
 <body>
-
-<div class="container">
+  <div class="container">
     <h2>♻️ Akıllı Tanıma</h2>
+    <p class="subtitle">Atığı kameraya göster, yapay zeka tanısın.</p>
+
     <button onclick="init()">Kamerayı Başlat</button>
 
     <div id="durum">Hazır.</div>
+
     <div id="webcam-container"></div>
-    <div id="sonuc"></div>
-</div>
 
-<script>
+    <div class="result-box">
+      <div id="sonuc">Sonuç burada görünecek</div>
+      <div id="oran"></div>
+    </div>
 
-const URL = "https://teachablemachine.withgoogle.com/models/Hi8uzjLs4/";
+    <div class="footer-note">Çevreyi korumak küçük adımlarla başlar 🌿</div>
+  </div>
 
-let model, webcam, maxPredictions;
+  <script>
+    const URL = "https://teachablemachine.withgoogle.com/models/Hi8uzjLs4/";
 
-async function init() {
-    document.getElementById("durum").innerText = "Model yükleniyor...";
+    let model, webcam, maxPredictions;
+    let sonSeslendirilenSinif = "";
+    let sonSesZamani = 0;
 
-    const modelURL = URL + "model.json";
-    const metadataURL = URL + "metadata.json";
+    async function init() {
+      try {
+        document.getElementById("durum").innerText = "Model yükleniyor...";
 
-    model = await tmImage.load(modelURL, metadataURL);
-    maxPredictions = model.getTotalClasses();
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
 
-    document.getElementById("durum").innerText = "Kamera açılıyor...";
+        model = await tmImage.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
 
-    webcam = new tmImage.Webcam(250, 250, true);
-    await webcam.setup();
-    await webcam.play();
+        document.getElementById("durum").innerText = "Kamera açılıyor...";
 
-    window.requestAnimationFrame(loop);
+        webcam = new tmImage.Webcam(260, 260, true);
+        await webcam.setup();
+        await webcam.play();
+        window.requestAnimationFrame(loop);
 
-    document.getElementById("webcam-container").appendChild(webcam.canvas);
+        const webcamContainer = document.getElementById("webcam-container");
+        webcamContainer.innerHTML = "";
+        webcamContainer.appendChild(webcam.canvas);
 
-    document.getElementById("durum").innerText = "Çalışıyor...";
-}
+        document.getElementById("durum").innerText = "Çalışıyor.";
+      } catch (error) {
+        console.error(error);
+        document.getElementById("durum").innerText = "Hata: " + error.message;
+      }
+    }
 
-async function loop() {
-    webcam.update();
-    await predict();
-    window.requestAnimationFrame(loop);
-}
+    async function loop() {
+      webcam.update();
+      await predict();
+      window.requestAnimationFrame(loop);
+    }
 
-async function predict() {
-    const prediction = await model.predict(webcam.canvas);
+    function sinifBilgisiGetir(className) {
+      const ad = className.toLowerCase();
 
-    let enYuksek = prediction[0];
+      if (ad === "plastik") {
+        return {
+          mesaj: "♻️ Plastik tespit edildi",
+          renk: "#16a34a",
+          ses: "Plastik tespit edildi"
+        };
+      }
 
-    for (let i = 1; i < prediction.length; i++) {
+      if (ad === "cam") {
+        return {
+          mesaj: "🧊 Cam tespit edildi",
+          renk: "#2563eb",
+          ses: "Cam tespit edildi"
+        };
+      }
+
+      if (ad === "kağıt" || ad === "kagit") {
+        return {
+          mesaj: "📄 Kağıt tespit edildi",
+          renk: "#d97706",
+          ses: "Kağıt tespit edildi"
+        };
+      }
+
+      if (ad === "metal") {
+        return {
+          mesaj: "🔩 Metal tespit edildi",
+          renk: "#7c3aed",
+          ses: "Metal tespit edildi"
+        };
+      }
+
+      return {
+        mesaj: "❓ Tanımlanamadı",
+        renk: "#6b7280",
+        ses: "Tanımlanamadı"
+      };
+    }
+
+    function konus(metin) {
+      if (!("speechSynthesis" in window)) return;
+
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(metin);
+      utterance.lang = "tr-TR";
+      utterance.rate = 1;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    async function predict() {
+      const prediction = await model.predict(webcam.canvas);
+
+      let enYuksek = prediction[0];
+      for (let i = 1; i < prediction.length; i++) {
         if (prediction[i].probability > enYuksek.probability) {
-            enYuksek = prediction[i];
+          enYuksek = prediction[i];
         }
+      }
+
+      const bilgi = sinifBilgisiGetir(enYuksek.className);
+      const yuzde = Math.round(enYuksek.probability * 100);
+
+      document.getElementById("sonuc").innerHTML =
+        `<span style="color:${bilgi.renk}">${bilgi.mesaj}</span>`;
+
+      document.getElementById("oran").innerText = `Güven oranı: %${yuzde}`;
+
+      const simdi = Date.now();
+      if (
+        yuzde >= 85 &&
+        (enYuksek.className !== sonSeslendirilenSinif || simdi - sonSesZamani > 4000)
+      ) {
+        konus(bilgi.ses);
+        sonSeslendirilenSinif = enYuksek.className;
+        sonSesZamani = simdi;
+      }
     }
-
-    let sonucText = "";
-    let renk = "";
-
-    // SINIFLARA GÖRE RENK VE METİN
-    if (enYuksek.className == "plastik") {
-        sonucText = "♻️ Plastik tespit edildi!";
-        renk = "green";
-    } 
-    else if (enYuksek.className == "cam") {
-        sonucText = "🧊 Cam tespit edildi!";
-        renk = "blue";
-    } 
-    else if (enYuksek.className == "kağıt") {
-        sonucText = "📄 Kağıt tespit edildi!";
-        renk = "orange";
-    } 
-    else {
-        sonucText = "❓ Tanımlanamadı";
-        renk = "gray";
-    }
-
-    document.getElementById("sonuc").innerHTML =
-        `<span style="color:${renk}">${sonucText} (%${(enYuksek.probability * 100).toFixed(0)})</span>`;
-}
-
-</script>
-
+  </script>
 </body>
 </html>
