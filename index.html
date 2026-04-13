@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Akilli Tanima</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    #webcam-container, #label-container, #durum {
+      margin-top: 15px;
+    }
+    button {
+      padding: 10px 16px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Akilli Tanima</h2>
+  <button onclick="init()">Kamerayi Baslat</button>
+
+  <div id="durum">Hazir.</div>
+  <div id="webcam-container"></div>
+  <div id="label-container"></div>
+
+  <script>
+    const URL = "https://teachablemachine.withgoogle.com/models/Hi8uzjLs4/";
+
+    let model, webcam, labelContainer, maxPredictions;
+    let calisiyor = false;
+
+    async function init() {
+      try {
+        document.getElementById("durum").innerText = "Model yukleniyor...";
+
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
+
+        model = await tmImage.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+
+        document.getElementById("durum").innerText = "Kamera aciliyor...";
+
+        webcam = new tmImage.Webcam(240, 240, true);
+        await webcam.setup();
+        await webcam.play();
+
+        calisiyor = true;
+        window.requestAnimationFrame(loop);
+
+        const webcamContainer = document.getElementById("webcam-container");
+        webcamContainer.innerHTML = "";
+        webcamContainer.appendChild(webcam.canvas);
+
+        labelContainer = document.getElementById("label-container");
+        labelContainer.innerHTML = "";
+
+        document.getElementById("durum").innerText = "Calisiyor.";
+      } catch (error) {
+        console.error(error);
+        document.getElementById("durum").innerText =
+          "Hata: " + error.message;
+      }
+    }
+
+    async function loop() {
+      if (!calisiyor) return;
+      webcam.update();
+      await predict();
+      window.requestAnimationFrame(loop);
+    }
+
+    async function predict() {
+      const prediction = await model.predict(webcam.canvas);
+
+      let highest = prediction[0];
+      for (let i = 1; i < prediction.length; i++) {
+        if (prediction[i].probability > highest.probability) {
+          highest = prediction[i];
+        }
+      }
+
+      const sonucMetni =
+        highest.className + " (" + Math.round(highest.probability * 100) + "%)";
+
+      labelContainer.innerHTML = sonucMetni;
+
+      if (window.AppInventor) {
+        AppInventor.setWebViewString(highest.className);
+      }
+    }
+  </script>
+</body>
+</html>
