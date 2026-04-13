@@ -110,6 +110,15 @@
       min-height: 24px;
     }
 
+    #bilgi {
+      margin-top: 10px;
+      font-size: 16px;
+      color: #065f46;
+      font-weight: 500;
+      line-height: 1.5;
+      min-height: 48px;
+    }
+
     .footer-note {
       margin-top: 16px;
       font-size: 13px;
@@ -131,6 +140,7 @@
     <div class="result-box">
       <div id="sonuc">Sonuç burada görünecek</div>
       <div id="oran"></div>
+      <div id="bilgi"></div>
     </div>
 
     <div class="footer-note">Çevreyi korumak küçük adımlarla başlar 🌿</div>
@@ -184,7 +194,8 @@
         return {
           mesaj: "♻️ Plastik tespit edildi",
           renk: "#16a34a",
-          ses: "Plastik tespit edildi"
+          ses: "Plastik tespit edildi",
+          bilgi: "Plastik atıklar geri dönüştürülerek doğaya zarar vermesi engellenebilir."
         };
       }
 
@@ -192,7 +203,8 @@
         return {
           mesaj: "🧊 Cam tespit edildi",
           renk: "#2563eb",
-          ses: "Cam tespit edildi"
+          ses: "Cam tespit edildi",
+          bilgi: "Cam yüzde yüz geri dönüştürülebilir ve tekrar kullanılabilir."
         };
       }
 
@@ -200,7 +212,8 @@
         return {
           mesaj: "📄 Kağıt tespit edildi",
           renk: "#d97706",
-          ses: "Kağıt tespit edildi"
+          ses: "Kağıt tespit edildi",
+          bilgi: "Kağıt geri dönüşümü ağaçların kesilmesini azaltır."
         };
       }
 
@@ -208,14 +221,16 @@
         return {
           mesaj: "🔩 Metal tespit edildi",
           renk: "#7c3aed",
-          ses: "Metal tespit edildi"
+          ses: "Metal tespit edildi",
+          bilgi: "Metal atıklar tekrar kullanılarak enerji tasarrufu sağlanır."
         };
       }
 
       return {
         mesaj: "❓ Tanımlanamadı",
         renk: "#6b7280",
-        ses: "Tanımlanamadı"
+        ses: "Tanımlanamadı",
+        bilgi: "Lütfen nesneyi daha net gösteriniz."
       };
     }
 
@@ -250,6 +265,7 @@
         `<span style="color:${bilgi.renk}">${bilgi.mesaj}</span>`;
 
       document.getElementById("oran").innerText = `Güven oranı: %${yuzde}`;
+      document.getElementById("bilgi").innerText = bilgi.bilgi;
 
       const simdi = Date.now();
       if (
