@@ -1,119 +1,148 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Akilli Tanima</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Akıllı Tanıma</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
-    <style>
-  body {
+<style>
+body {
     font-family: Arial, sans-serif;
-    margin: 24px;
-    background: #f4f8fb;
-    color: #1f2937;
-  }
+    background: linear-gradient(135deg, #d4fcf7, #96e6a1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
 
-  h2 {
-    color: #0f766e;
-    margin-bottom: 16px;
-  }
+/* Kart tasarım */
+.container {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    text-align: center;
+    width: 300px;
+}
 
-  button {
-    padding: 12px 20px;
-    font-size: 16px;
-    border: none;
-    border-radius: 10px;
-    background: #14b8a6;
+/* Başlık */
+h2 {
+    color: #2c7a7b;
+}
+
+/* Buton */
+button {
+    background: #38a169;
     color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 16px;
     cursor: pointer;
-    margin-bottom: 14px;
-  }
+}
 
-  #durum {
-    margin-top: 10px;
+button:hover {
+    background: #2f855a;
+}
+
+/* Sonuç yazısı */
+#sonuc {
+    margin-top: 15px;
     font-size: 18px;
     font-weight: bold;
-    color: #2563eb;
-  }
-  </style>
+}
+
+#webcam-container {
+    margin-top: 15px;
+}
+</style>
 </head>
+
 <body>
-  <h2>Akilli Tanima</h2>
-  <button onclick="init()">Kamerayi Baslat</button>
 
-  <div id="durum">Hazir.</div>
-  <div id="webcam-container"></div>
-  <div id="label-container"></div>
+<div class="container">
+    <h2>♻️ Akıllı Tanıma</h2>
+    <button onclick="init()">Kamerayı Başlat</button>
 
-  <script>
-    const URL = "https://teachablemachine.withgoogle.com/models/Hi8uzjLs4/";
+    <div id="durum">Hazır.</div>
+    <div id="webcam-container"></div>
+    <div id="sonuc"></div>
+</div>
 
-    let model, webcam, labelContainer, maxPredictions;
-    let calisiyor = false;
+<script>
 
-    async function init() {
-      try {
-        document.getElementById("durum").innerText = "Model yukleniyor...";
+const URL = "https://teachablemachine.withgoogle.com/models/Hi8uzjLs4/";
 
-        const modelURL = URL + "model.json";
-        const metadataURL = URL + "metadata.json";
+let model, webcam, maxPredictions;
 
-        model = await tmImage.load(modelURL, metadataURL);
-        maxPredictions = model.getTotalClasses();
+async function init() {
+    document.getElementById("durum").innerText = "Model yükleniyor...";
 
-        document.getElementById("durum").innerText = "Kamera aciliyor...";
+    const modelURL = URL + "model.json";
+    const metadataURL = URL + "metadata.json";
 
-        webcam = new tmImage.Webcam(240, 240, true);
-        await webcam.setup();
-        await webcam.play();
+    model = await tmImage.load(modelURL, metadataURL);
+    maxPredictions = model.getTotalClasses();
 
-        calisiyor = true;
-        window.requestAnimationFrame(loop);
+    document.getElementById("durum").innerText = "Kamera açılıyor...";
 
-        const webcamContainer = document.getElementById("webcam-container");
-        webcamContainer.innerHTML = "";
-        webcamContainer.appendChild(webcam.canvas);
+    webcam = new tmImage.Webcam(250, 250, true);
+    await webcam.setup();
+    await webcam.play();
 
-        labelContainer = document.getElementById("label-container");
-        labelContainer.innerHTML = "";
+    window.requestAnimationFrame(loop);
 
-        document.getElementById("durum").innerText = "Calisiyor.";
-      } catch (error) {
-        console.error(error);
-        document.getElementById("durum").innerText =
-          "Hata: " + error.message;
-      }
-    }
+    document.getElementById("webcam-container").appendChild(webcam.canvas);
 
-    async function loop() {
-      if (!calisiyor) return;
-      webcam.update();
-      await predict();
-      window.requestAnimationFrame(loop);
-    }
+    document.getElementById("durum").innerText = "Çalışıyor...";
+}
 
-    async function predict() {
-      const prediction = await model.predict(webcam.canvas);
+async function loop() {
+    webcam.update();
+    await predict();
+    window.requestAnimationFrame(loop);
+}
 
-      let highest = prediction[0];
-      for (let i = 1; i < prediction.length; i++) {
-        if (prediction[i].probability > highest.probability) {
-          highest = prediction[i];
+async function predict() {
+    const prediction = await model.predict(webcam.canvas);
+
+    let enYuksek = prediction[0];
+
+    for (let i = 1; i < prediction.length; i++) {
+        if (prediction[i].probability > enYuksek.probability) {
+            enYuksek = prediction[i];
         }
-      }
-
-      const sonucMetni =
-        highest.className + " (" + Math.round(highest.probability * 100) + "%)";
-
-      labelContainer.innerHTML = sonucMetni;
-
-      if (window.AppInventor) {
-        AppInventor.setWebViewString(highest.className);
-      }
     }
-  </script>
+
+    let sonucText = "";
+    let renk = "";
+
+    // SINIFLARA GÖRE RENK VE METİN
+    if (enYuksek.className == "plastik") {
+        sonucText = "♻️ Plastik tespit edildi!";
+        renk = "green";
+    } 
+    else if (enYuksek.className == "cam") {
+        sonucText = "🧊 Cam tespit edildi!";
+        renk = "blue";
+    } 
+    else if (enYuksek.className == "kağıt") {
+        sonucText = "📄 Kağıt tespit edildi!";
+        renk = "orange";
+    } 
+    else {
+        sonucText = "❓ Tanımlanamadı";
+        renk = "gray";
+    }
+
+    document.getElementById("sonuc").innerHTML =
+        `<span style="color:${renk}">${sonucText} (%${(enYuksek.probability * 100).toFixed(0)})</span>`;
+}
+
+</script>
+
 </body>
 </html>
