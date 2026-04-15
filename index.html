@@ -142,7 +142,7 @@
     <h2>♻️ Akıllı Tanıma</h2>
     <p class="subtitle">Atığı kameraya göster, yapay zeka tanısın.</p>
 
-    <button onclick="init()">Kamerayı Başlat</button>
+    <button id="baslatBtn" onclick="init()">Kamerayı Başlat</button>
 
     <div id="durum">Hazır.</div>
 
@@ -160,44 +160,14 @@
 
   <script>
     const URL = "https://teachablemachine.withgoogle.com/models/Hi8uzjLs4/";
+    const ESIK_DEGERI = 85;
 
-    let model, webcam, maxPredictions;
+    let model = null;
+    let webcam = null;
+    let animasyonId = null;
     let sonSeslendirilenSinif = "";
     let sonSesZamani = 0;
-
-    async function init() {
-      try {
-        document.getElementById("durum").innerText = "Model yükleniyor...";
-
-        const modelURL = URL + "model.json";
-        const metadataURL = URL + "metadata.json";
-
-        model = await tmImage.load(modelURL, metadataURL);
-        maxPredictions = model.getTotalClasses();
-
-        document.getElementById("durum").innerText = "Kamera açılıyor...";
-
-        webcam = new tmImage.Webcam(260, 260, true);
-        await webcam.setup();
-        await webcam.play();
-        window.requestAnimationFrame(loop);
-
-        const webcamContainer = document.getElementById("webcam-container");
-        webcamContainer.innerHTML = "";
-        webcamContainer.appendChild(webcam.canvas);
-
-        document.getElementById("durum").innerText = "Çalışıyor.";
-      } catch (error) {
-        console.error(error);
-        document.getElementById("durum").innerText = "Hata: " + error.message;
-      }
-    }
-
-    async function loop() {
-      webcam.update();
-      await predict();
-      window.requestAnimationFrame(loop);
-    }
+    let modelYuklendi = false;
 
     function sinifBilgisiGetir(className) {
       const ad = className.toLowerCase();
@@ -243,17 +213,16 @@
       }
 
       return {
-        mesaj: "❓ Tanımlanamadı",
-        renk: "#6b7280",
-        ses: "Tanımlanamadı",
-        bilgi: "Lütfen nesneyi daha net gösteriniz.",
-        kutu: "Uygun atık türü belirlenemedi."
+        mesaj: "⚠️ Nesne algılanamadı",
+        renk: "#dc2626",
+        ses: "Nesne algılanamadı",
+        bilgi: "Lütfen nesneyi kameraya daha net ve yakın gösteriniz.",
+        kutu: "Atık türü belirlenemedi."
       };
     }
 
     function konus(metin) {
       if (!("speechSynthesis" in window)) return;
-
       window.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(metin);
@@ -265,7 +234,87 @@
       window.speechSynthesis.speak(utterance);
     }
 
+    function sonucuTemizle() {
+      document.getElementById("sonuc").innerText = "Sonuç burada görünecek";
+      document.getElementById("oran").innerText = "";
+      document.getElementById("bilgi").innerText = "";
+      document.getElementById("kutu").innerText = "";
+    }
+
+    async function modeliYukle() {
+      if (modelYuklendi) return;
+
+      document.getElementById("durum").innerText = "Model yükleniyor...";
+      await tf.ready();
+
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
+      model = await tmImage.load(modelURL, metadataURL);
+
+      modelYuklendi = true;
+    }
+
+    async function kamerayiDurdur() {
+      if (animasyonId) {
+        cancelAnimationFrame(animasyonId);
+        animasyonId = null;
+      }
+
+      if (webcam) {
+        try {
+          await webcam.stop();
+        } catch (e) {
+          console.log("Kamera durdurma uyarısı:", e);
+        }
+        webcam = null;
+      }
+
+      document.getElementById("webcam-container").innerHTML = "";
+    }
+
+    async function init() {
+      const durum = document.getElementById("durum");
+      const buton = document.getElementById("baslatBtn");
+
+      try {
+        buton.disabled = true;
+        durum.innerText = "Başlatılıyor...";
+        sonucuTemizle();
+
+        await kamerayiDurdur();
+        await modeliYukle();
+
+        durum.innerText = "Kamera açılıyor...";
+
+        webcam = new tmImage.Webcam(260, 260, true);
+        await webcam.setup();
+        await webcam.play();
+
+        const webcamContainer = document.getElementById("webcam-container");
+        webcamContainer.innerHTML = "";
+        webcamContainer.appendChild(webcam.canvas);
+
+        durum.innerText = "Çalışıyor.";
+        loop();
+      } catch (error) {
+        console.error(error);
+        durum.innerText = "Kamera açılamadı: " + error.message;
+      } finally {
+        buton.disabled = false;
+      }
+    }
+
+    async function loop() {
+      if (!webcam || !model) return;
+
+      webcam.update();
+      await predict();
+      animasyonId = window.requestAnimationFrame(loop);
+    }
+
     async function predict() {
+      if (!model || !webcam) return;
+
       const prediction = await model.predict(webcam.canvas);
 
       let enYuksek = prediction[0];
@@ -275,20 +324,31 @@
         }
       }
 
-      const bilgi = sinifBilgisiGetir(enYuksek.className);
       const yuzde = Math.round(enYuksek.probability * 100);
+
+      if (yuzde < ESIK_DEGERI) {
+        document.getElementById("sonuc").innerHTML =
+          `<span style="color:#dc2626">⚠️ Nesne algılanamadı</span>`;
+        document.getElementById("oran").innerText = `Güven oranı: %${yuzde}`;
+        document.getElementById("bilgi").innerText =
+          "Lütfen nesneyi kameraya daha net ve yakın gösteriniz.";
+        document.getElementById("kutu").innerText =
+          "🗑 Atık türü belirlenemedi.";
+        return;
+      }
+
+      const bilgi = sinifBilgisiGetir(enYuksek.className);
 
       document.getElementById("sonuc").innerHTML =
         `<span style="color:${bilgi.renk}">${bilgi.mesaj}</span>`;
-
       document.getElementById("oran").innerText = `Güven oranı: %${yuzde}`;
       document.getElementById("bilgi").innerText = bilgi.bilgi;
       document.getElementById("kutu").innerText = `🗑 ${bilgi.kutu}`;
 
       const simdi = Date.now();
       if (
-        yuzde >= 85 &&
-        (enYuksek.className !== sonSeslendirilenSinif || simdi - sonSesZamani > 4000)
+        enYuksek.className !== sonSeslendirilenSinif ||
+        simdi - sonSesZamani > 4000
       ) {
         konus(`${bilgi.ses}. ${bilgi.kutu}`);
         sonSeslendirilenSinif = enYuksek.className;
