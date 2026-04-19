@@ -1,360 +1,291 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Akıllı Tanıma</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Akıllı Tanıma</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #d9f7e8, #b8e7d3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #d9f7e8, #b8e7d3, #eefaf4);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 24px;
-      color: #1f2937;
-    }
+/* ÜST ŞERİT */
+.ust-serit {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(135deg, #15803d, #22c55e);
+  color: white;
+  text-align: center;
+  padding: 18px 0;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+  z-index: 10;
+}
 
-    .container {
-      width: 100%;
-      max-width: 420px;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 24px;
-      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16);
-      padding: 28px 24px;
-      text-align: center;
-      backdrop-filter: blur(6px);
-    }
+.okul-adi {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
 
-    h2 {
-      margin: 0 0 10px;
-      color: #0f766e;
-      font-size: 34px;
-    }
+.proje-adi {
+  font-size: 16px;
+  font-weight: 500;
+  opacity: 0.95;
+}
 
-    .subtitle {
-      margin: 0 0 20px;
-      color: #4b5563;
-      font-size: 15px;
-    }
+/* ANA KUTU */
+.container {
+  margin-top: 130px;
+  background: white;
+  padding: 25px;
+  border-radius: 20px;
+  text-align: center;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
 
-    button {
-      border: none;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #22c55e, #16a34a);
-      color: white;
-      font-size: 18px;
-      font-weight: bold;
-      padding: 14px 22px;
-      cursor: pointer;
-      box-shadow: 0 8px 18px rgba(34, 197, 94, 0.28);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-      margin-bottom: 16px;
-    }
+h2 {
+  font-size: 32px;
+  color: #0f766e;
+  margin: 10px 0;
+}
 
-    button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 12px 22px rgba(34, 197, 94, 0.35);
-    }
+button {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  border: none;
+  padding: 14px 22px;
+  border-radius: 14px;
+  font-size: 18px;
+  cursor: pointer;
+  margin-top: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
 
-    #durum {
-      margin: 6px 0 14px;
-      font-size: 18px;
-      font-weight: bold;
-      color: #2563eb;
-      min-height: 24px;
-    }
+#durum {
+  margin-top: 10px;
+  font-weight: bold;
+  color: blue;
+}
 
-    #webcam-container {
-      margin-top: 8px;
-      display: flex;
-      justify-content: center;
-    }
+canvas {
+  border-radius: 15px;
+  margin-top: 10px;
+}
 
-    #webcam-container canvas {
-      border-radius: 20px;
-      border: 4px solid #86efac;
-      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
-      max-width: 100%;
-      height: auto;
-    }
+#sonuc {
+  margin-top: 15px;
+  font-size: 22px;
+  font-weight: bold;
+}
 
-    .result-box {
-      margin-top: 18px;
-      padding: 16px;
-      border-radius: 16px;
-      background: #f8fafc;
-      box-shadow: inset 0 0 0 1px #e5e7eb;
-    }
+#oran {
+  margin-top: 5px;
+}
 
-    #sonuc {
-      font-size: 24px;
-      font-weight: bold;
-      min-height: 34px;
-      margin-bottom: 8px;
-    }
+#bilgi {
+  margin-top: 10px;
+  color: #065f46;
+}
 
-    #oran {
-      font-size: 17px;
-      color: #374151;
-      min-height: 24px;
-    }
+#kutu {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #eef;
+  font-weight: bold;
+}
 
-    #bilgi {
-      margin-top: 10px;
-      font-size: 16px;
-      color: #065f46;
-      font-weight: 500;
-      line-height: 1.5;
-      min-height: 48px;
-    }
-
-    #kutu {
-      margin-top: 12px;
-      font-size: 16px;
-      font-weight: bold;
-      color: #1d4ed8;
-      background: #eff6ff;
-      border-radius: 12px;
-      padding: 10px;
-      min-height: 24px;
-    }
-
-    .footer-note {
-      margin-top: 16px;
-      font-size: 13px;
-      color: #6b7280;
-    }
-  </style>
+.alt-mesaj {
+  margin-top: 15px;
+  font-size: 13px;
+  color: #6b7280;
+}
+</style>
 </head>
+
 <body>
-  <div class="container">
-    <h2>♻️ Akıllı Tanıma</h2>
-    <p class="subtitle">Atığı kameraya göster, yapay zeka tanısın.</p>
 
-    <button id="baslatBtn" onclick="init()">Kamerayı Başlat</button>
+<div class="ust-serit">
+  <div class="okul-adi">🏫 Cemal Sala Ortaokulu</div>
+  <div class="proje-adi">TÜBİTAK 4006-A Projesi</div>
+</div>
 
-    <div id="durum">Hazır.</div>
+<div class="container">
+  <h2>♻️ Akıllı Tanıma</h2>
+  <p>Atığı kameraya göster, yapay zeka tanısın.</p>
 
-    <div id="webcam-container"></div>
+  <button onclick="init()">Kamerayı Başlat</button>
 
-    <div class="result-box">
-      <div id="sonuc">Sonuç burada görünecek</div>
-      <div id="oran"></div>
-      <div id="bilgi"></div>
-      <div id="kutu"></div>
-    </div>
+  <div id="durum">Hazır.</div>
 
-    <div class="footer-note">Çevreyi korumak küçük adımlarla başlar 🌿</div>
+  <div id="webcam-container"></div>
+
+  <div id="sonuc">Sonuç burada görünecek</div>
+  <div id="oran"></div>
+  <div id="bilgi"></div>
+  <div id="kutu"></div>
+
+  <div class="alt-mesaj">
+    Çevreyi korumak küçük adımlarla başlar 🌿
   </div>
+</div>
 
-  <script>
-    const URL = "https://teachablemachine.withgoogle.com/models/Hi8uzjLs4/";
-    const ESIK_DEGERI = 85;
+<script>
+const MODEL_URL = "https://teachablemachine.withgoogle.com/models/Hi8uzjLs4/";
 
-    let model = null;
-    let webcam = null;
-    let animasyonId = null;
-    let sonSeslendirilenSinif = "";
-    let sonSesZamani = 0;
-    let modelYuklendi = false;
+let model, webcam;
 
-    function sinifBilgisiGetir(className) {
-      const ad = className.toLowerCase();
+// Ses kontrolü
+let sonKonusulanSinif = "";
+let nesneAktif = false;
 
-      if (ad === "plastik") {
-        return {
-          mesaj: "♻️ Plastik tespit edildi",
-          renk: "#16a34a",
-          ses: "Plastik tespit edildi",
-          bilgi: "Plastik atıklar geri dönüştürülerek doğaya zarar vermesi engellenebilir.",
-          kutu: "Sarı geri dönüşüm kutusuna atılmalıdır."
-        };
-      }
+async function init() {
+  try {
+    document.getElementById("durum").innerText = "Model yükleniyor...";
 
-      if (ad === "cam") {
-        return {
-          mesaj: "🧊 Cam tespit edildi",
-          renk: "#2563eb",
-          ses: "Cam tespit edildi",
-          bilgi: "Cam yüzde yüz geri dönüştürülebilir ve tekrar kullanılabilir.",
-          kutu: "Yeşil atık kutusuna atılmalıdır."
-        };
-      }
+    const modelURL = MODEL_URL + "model.json";
+    const metadataURL = MODEL_URL + "metadata.json";
 
-      if (ad === "kağıt" || ad === "kagit") {
-        return {
-          mesaj: "📄 Kağıt tespit edildi",
-          renk: "#d97706",
-          ses: "Kağıt tespit edildi",
-          bilgi: "Kağıt geri dönüşümü ağaçların kesilmesini azaltır.",
-          kutu: "Mavi geri dönüşüm kutusuna atılmalıdır."
-        };
-      }
+    model = await tmImage.load(modelURL, metadataURL);
 
-      if (ad === "metal") {
-        return {
-          mesaj: "🔩 Metal tespit edildi",
-          renk: "#7c3aed",
-          ses: "Metal tespit edildi",
-          bilgi: "Metal atıklar tekrar kullanılarak enerji tasarrufu sağlanır.",
-          kutu: "Gri atık kutusuna atılmalıdır."
-        };
-      }
+    document.getElementById("durum").innerText = "Kamera açılıyor...";
 
-      return {
-        mesaj: "⚠️ Nesne algılanamadı",
-        renk: "#dc2626",
-        ses: "Nesne algılanamadı",
-        bilgi: "Lütfen nesneyi kameraya daha net ve yakın gösteriniz.",
-        kutu: "Atık türü belirlenemedi."
-      };
+    webcam = new tmImage.Webcam(250, 250, true);
+    await webcam.setup();
+    await webcam.play();
+    window.requestAnimationFrame(loop);
+
+    document.getElementById("webcam-container").innerHTML = "";
+    document.getElementById("webcam-container").appendChild(webcam.canvas);
+
+    document.getElementById("durum").innerText = "Çalışıyor.";
+  } catch (e) {
+    document.getElementById("durum").innerText = "Hata: " + e.message;
+  }
+}
+
+async function loop() {
+  webcam.update();
+  await predict();
+  window.requestAnimationFrame(loop);
+}
+
+function bilgiGetir(ad) {
+  ad = ad.toLowerCase();
+
+  if (ad === "plastik") {
+    return {
+      mesaj: "♻️ Plastik tespit edildi",
+      bilgi: "Plastik atıklar geri dönüştürülerek doğaya zarar vermesi engellenebilir.",
+      kutu: "🟡 Sarı geri dönüşüm kutusu",
+      ses: "Plastik tespit edildi. Sarı geri dönüşüm kutusuna atınız."
+    };
+  }
+
+  if (ad === "cam") {
+    return {
+      mesaj: "🧊 Cam tespit edildi",
+      bilgi: "Cam yüzde yüz geri dönüştürülebilir ve tekrar kullanılabilir.",
+      kutu: "🟢 Yeşil geri dönüşüm kutusu",
+      ses: "Cam tespit edildi. Yeşil cam kutusuna atınız."
+    };
+  }
+
+  if (ad === "kağıt" || ad === "kagit") {
+    return {
+      mesaj: "📄 Kağıt tespit edildi",
+      bilgi: "Kağıt geri dönüşümü ağaçların kesilmesini azaltır.",
+      kutu: "🔵 Mavi geri dönüşüm kutusu",
+      ses: "Kağıt tespit edildi. Mavi geri dönüşüm kutusuna atınız."
+    };
+  }
+
+  if (ad === "metal") {
+    return {
+      mesaj: "🔩 Metal tespit edildi",
+      bilgi: "Metal atıklar tekrar kullanılarak enerji tasarrufu sağlanabilir.",
+      kutu: "⚪ Gri geri dönüşüm kutusu",
+      ses: "Metal tespit edildi. Gri geri dönüşüm kutusuna atınız."
+    };
+  }
+
+  return {
+    mesaj: "❗ Nesne algılanamadı",
+    bilgi: "Lütfen nesneyi kameraya daha net gösteriniz.",
+    kutu: "🚫 Atık türü belirlenemedi",
+    ses: "Nesne algılanamadı."
+  };
+}
+
+function konus(metin) {
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(metin);
+  u.lang = "tr-TR";
+  speechSynthesis.speak(u);
+}
+
+async function predict() {
+  const tahmin = await model.predict(webcam.canvas);
+
+  let enYuksek = tahmin[0];
+  for (let i = 1; i < tahmin.length; i++) {
+    if (tahmin[i].probability > enYuksek.probability) {
+      enYuksek = tahmin[i];
     }
+  }
 
-    function konus(metin) {
-      if (!("speechSynthesis" in window)) return;
-      window.speechSynthesis.cancel();
+  const yuzde = Math.round(enYuksek.probability * 100);
 
-      const utterance = new SpeechSynthesisUtterance(metin);
-      utterance.lang = "tr-TR";
-      utterance.rate = 1;
-      utterance.pitch = 1;
-      utterance.volume = 1;
+  
+  if (yuzde < 85) {
 
-      window.speechSynthesis.speak(utterance);
-    }
+  document.getElementById("sonuc").innerText = "❗ Nesne algılanamadı";
+  document.getElementById("oran").innerText = "Güven düşük";
+  document.getElementById("bilgi").innerText = "Lütfen nesneyi kameraya daha net gösteriniz.";
+  document.getElementById("kutu").innerText = "🚫 Atık türü belirlenemedi";
 
-    function sonucuTemizle() {
-      document.getElementById("sonuc").innerText = "Sonuç burada görünecek";
-      document.getElementById("oran").innerText = "";
-      document.getElementById("bilgi").innerText = "";
-      document.getElementById("kutu").innerText = "";
-    }
+  
+  if (nesneAktif === true) {
+    konus("Nesne algılanamadı");
+  }
 
-    async function modeliYukle() {
-      if (modelYuklendi) return;
+  // Durumu sıfırla
+  nesneAktif = false;
+  sonKonusulanSinif = "";
 
-      document.getElementById("durum").innerText = "Model yükleniyor...";
-      await tf.ready();
+  return;
+}
 
-      const modelURL = URL + "model.json";
-      const metadataURL = URL + "metadata.json";
-      model = await tmImage.load(modelURL, metadataURL);
+  const bilgi = bilgiGetir(enYuksek.className);
 
-      modelYuklendi = true;
-    }
+  document.getElementById("sonuc").innerText = bilgi.mesaj;
+  document.getElementById("oran").innerText = "Güven: %" + yuzde;
+  document.getElementById("bilgi").innerText = bilgi.bilgi;
+  document.getElementById("kutu").innerText = bilgi.kutu;
 
-    async function kamerayiDurdur() {
-      if (animasyonId) {
-        cancelAnimationFrame(animasyonId);
-        animasyonId = null;
-      }
+  // Aynı nesne sabit dururken tekrar konuşmasın
+  if (!nesneAktif || sonKonusulanSinif !== enYuksek.className) {
+    konus(bilgi.ses);
+    nesneAktif = true;
+    sonKonusulanSinif = enYuksek.className;
+  }
+}
+</script>
 
-      if (webcam) {
-        try {
-          await webcam.stop();
-        } catch (e) {
-          console.log("Kamera durdurma uyarısı:", e);
-        }
-        webcam = null;
-      }
-
-      document.getElementById("webcam-container").innerHTML = "";
-    }
-
-    async function init() {
-      const durum = document.getElementById("durum");
-      const buton = document.getElementById("baslatBtn");
-
-      try {
-        buton.disabled = true;
-        durum.innerText = "Başlatılıyor...";
-        sonucuTemizle();
-
-        await kamerayiDurdur();
-        await modeliYukle();
-
-        durum.innerText = "Kamera açılıyor...";
-
-        webcam = new tmImage.Webcam(260, 260, true);
-        await webcam.setup();
-        await webcam.play();
-
-        const webcamContainer = document.getElementById("webcam-container");
-        webcamContainer.innerHTML = "";
-        webcamContainer.appendChild(webcam.canvas);
-
-        durum.innerText = "Çalışıyor.";
-        loop();
-      } catch (error) {
-        console.error(error);
-        durum.innerText = "Kamera açılamadı: " + error.message;
-      } finally {
-        buton.disabled = false;
-      }
-    }
-
-    async function loop() {
-      if (!webcam || !model) return;
-
-      webcam.update();
-      await predict();
-      animasyonId = window.requestAnimationFrame(loop);
-    }
-
-    async function predict() {
-      if (!model || !webcam) return;
-
-      const prediction = await model.predict(webcam.canvas);
-
-      let enYuksek = prediction[0];
-      for (let i = 1; i < prediction.length; i++) {
-        if (prediction[i].probability > enYuksek.probability) {
-          enYuksek = prediction[i];
-        }
-      }
-
-      const yuzde = Math.round(enYuksek.probability * 100);
-
-      if (yuzde < ESIK_DEGERI) {
-        document.getElementById("sonuc").innerHTML =
-          `<span style="color:#dc2626">⚠️ Nesne algılanamadı</span>`;
-        document.getElementById("oran").innerText = `Güven oranı: %${yuzde}`;
-        document.getElementById("bilgi").innerText =
-          "Lütfen nesneyi kameraya daha net ve yakın gösteriniz.";
-        document.getElementById("kutu").innerText =
-          "🗑 Atık türü belirlenemedi.";
-        return;
-      }
-
-      const bilgi = sinifBilgisiGetir(enYuksek.className);
-
-      document.getElementById("sonuc").innerHTML =
-        `<span style="color:${bilgi.renk}">${bilgi.mesaj}</span>`;
-      document.getElementById("oran").innerText = `Güven oranı: %${yuzde}`;
-      document.getElementById("bilgi").innerText = bilgi.bilgi;
-      document.getElementById("kutu").innerText = `🗑 ${bilgi.kutu}`;
-
-      const simdi = Date.now();
-      if (
-        enYuksek.className !== sonSeslendirilenSinif ||
-        simdi - sonSesZamani > 4000
-      ) {
-        konus(`${bilgi.ses}. ${bilgi.kutu}`);
-        sonSeslendirilenSinif = enYuksek.className;
-        sonSesZamani = simdi;
-      }
-    }
-  </script>
 </body>
 </html>
