@@ -223,7 +223,14 @@ function bilgiGetir(ad) {
       ses: "Metal tespit edildi. Gri geri dönüşüm kutusuna atınız."
     };
   }
-
+if(ad=== "tanimsiz") {
+  return {
+    mesaj:"☺️ insan algılandı",
+    bilgi:"Bu bir atık değildir.",
+    kutu:"🛑 Geri dönüşüm gerektirmez",
+      ses:"insan algılandı. Bu bir atık değildir."
+  };
+  }
   return {
     mesaj: "❗ Nesne algılanamadı",
     bilgi: "Lütfen nesneyi kameraya daha net gösteriniz.",
